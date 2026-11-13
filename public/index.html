@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f4f2ec">
+<title>ReStream</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+:root{
+  --bg:#f4f2ec;
+  --s1:#ffffff;
+  --s2:#f6f4ee;
+  --s3:#f6f4ee;
+  --border:#e7e3d8;
+  --border2:#ded9cb;
+  --text:#1c1a15;
+  --muted:#706a5c;
+  --muted2:#4a453a;
+  --accent:#a8681f;
+  --accent-glow:rgba(168,104,31,.12);
+  --purple:#12866c;
+  --purple-glow:rgba(18,134,108,.10);
+  --green:#12866c;
+  --red:#b7364b;
+  --yellow:#a8681f;
+  --blue:#2f5f8f;
+  --gold-tint:rgba(168,104,31,.10);
+  --teal-tint:rgba(18,134,108,.10);
+  --line:#e7e3d8;
+  --r:18px;
+  --r-sm:12px;
+  --r-xs:9px;
+  --shadow:0 1px 2px rgba(30,25,10,.04),0 10px 28px rgba(30,25,10,.05);
+}
+
+html,body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  min-height:100vh;
+  font-size:16px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── SCROLL ── */
+body{overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom,20px)}
+::-webkit-scrollbar{display:none}
+
+/* ── HEADER ── */
+.header{
+  position:sticky;top:0;z-index:200;
+  background:rgba(244,242,236,.94);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:14px 18px 14px;
+  display:flex;align-items:center;gap:12px;
+}
+.logo-mark{
+  width:38px;height:38px;border-radius:11px;flex-shrink:0;
+  background:linear-gradient(135deg,#a8681f 0%,#c98a3c 100%);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 3px 10px rgba(168,104,31,.28);
+}
+.logo-mark svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.header-text h1{font-family:'Fraunces',Georgia,serif;font-size:19px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
+.header-text p{font-size:12px;color:var(--muted);margin-top:1px}
+.live-badge{
+  margin-left:auto;
+  padding:6px 12px;border-radius:100px;
+  font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  background:#1c1a15;color:#b8b0a0;border:1px solid #1c1a15;
+  transition:all .4s;white-space:nowrap;
+}
+.live-badge.starting{
+  background:#1c1a15;color:#e8c877;
+  border-color:#1c1a15;
+  animation:startPulse 1.4s ease-in-out infinite;
+}
+@keyframes startPulse{0%,100%{opacity:1}50%{opacity:.55}}
+.live-badge.on{
+  background:#12866c;color:#fff;
+  border-color:#12866c;
+  box-shadow:0 3px 10px rgba(18,134,108,.28);
+}
+.live-badge.err{
+  background:#b7364b;color:#fff;
+  border-color:#b7364b;
+}
+
+/* ── MAIN ── */
+main{padding:16px 16px 10px;max-width:540px;margin:0 auto}
+
+/* ── SECTION CARD ── */
+.sect{
+  background:var(--s1);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  margin-bottom:16px;
+  box-shadow:var(--shadow);
+}
+.sect-head{
+  display:flex;align-items:center;gap:10px;
+  padding:15px 18px 13px;
+  border-bottom:1px solid var(--border);
+  background:var(--s2);
+}
+.sect-head .num{
+  width:24px;height:24px;border-radius:8px;
+  background:var(--gold-tint);border:1px solid rgba(168,104,31,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0;
+}
+.sect-head h2{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.1px}
+.sect-body{padding:16px 18px}
+
+/* ── FIELDS ── */
+.field{margin-bottom:13px}
+.field:last-child{margin-bottom:0}
+.field label{
+  display:block;font-size:12px;font-weight:600;
+  color:var(--muted);letter-spacing:.4px;text-transform:uppercase;
+  margin-bottom:7px;
+}
+.input-wrap{position:relative}
+.input-wrap .pfx{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  font-size:16px;pointer-events:none;
+}
+input[type=text],input[type=url],input[type=password],input[type=number],select,textarea{
+  width:100%;
+  background:var(--s3);
+  border:1px solid var(--border2);
+  border-radius:var(--r-sm);
+  color:var(--text);
+  font-family:inherit;
+  font-size:15px;
+  padding:12px 14px;
+  outline:none;
+  transition:border .2s,box-shadow .2s;
+  -webkit-appearance:none;
+  appearance:none;
+}
+input.has-pfx{padding-left:36px}
+input:focus,select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-glow);
+}
+input::placeholder{color:var(--muted)}
+select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23706a5c' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+  padding-right:36px;
+  cursor:pointer;
+}
+select option{background:var(--s3)}
+.eye-btn{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;
+  color:var(--muted);font-size:17px;padding:4px;
+  transition:color .2s;
+}
+.eye-btn:hover{color:var(--muted2)}
+
+/* ── PLATFORM GRID ── */
+.plat-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:9px;
+}
+.plat-card{
+  background:var(--s3);border:2px solid var(--border2);
+  border-radius:var(--r-sm);padding:12px 10px;
+  cursor:pointer;text-align:center;
+  transition:all .2s;
+  user-select:none;
+}
+.plat-card:active{transform:scale(.96)}
+.plat-card .pico{font-size:24px;display:block;margin-bottom:5px}
+.plat-card .pname{font-size:12px;font-weight:600;color:var(--muted2);transition:color .2s}
+.plat-card.active{border-color:var(--accent);background:var(--accent-glow)}
+.plat-card.active .pname{color:var(--accent)}
+
+/* ── RESOLUTION ── */
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.res-card{
+  background:var(--s3);border:2px solid var(--border2);
+  border-radius:var(--r-sm);padding:11px 10px;
+  cursor:pointer;text-align:center;
+  transition:all .2s;user-select:none;
+}
+.res-card:active{transform:scale(.96)}
+.res-card .rlabel{font-size:16px;font-weight:700;color:var(--text);display:block}
+.res-card .rsub{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+.res-card.active{border-color:var(--purple);background:var(--purple-glow)}
+.res-card.active .rlabel{color:var(--purple)}
+
+/* ── FPS ── */
+.fps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.fps-card{
+  background:var(--s3);border:2px solid var(--border2);
+  border-radius:var(--r-sm);padding:10px 4px;
+  cursor:pointer;text-align:center;
+  transition:all .2s;user-select:none;
+}
+.fps-card:active{transform:scale(.96)}
+.fps-card .fval{font-size:16px;font-weight:700;color:var(--text);display:block}
+.fps-card .fsub{font-size:10px;color:var(--muted);display:block;margin-top:2px}
+.fps-card.active{border-color:var(--accent);background:var(--accent-glow)}
+.fps-card.active .fval{color:var(--accent)}
+
+/* ── TOGGLE ── */
+.toggle-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 0;
+}
+.toggle-info .tl{font-size:14px;font-weight:600;color:var(--text)}
+.toggle-info .ts{font-size:12px;color:var(--muted);margin-top:2px}
+.tog{
+  width:50px;height:28px;border-radius:14px;
+  background:var(--border2);cursor:pointer;
+  position:relative;transition:background .3s;flex-shrink:0;
+}
+.tog.on{background:var(--accent)}
+.tog::after{
+  content:'';position:absolute;
+  top:3px;left:3px;
+  width:22px;height:22px;border-radius:50%;
+  background:#fff;
+  box-shadow:0 1px 4px rgba(30,25,10,.28);
+  transition:left .25s cubic-bezier(.4,0,.2,1);
+}
+.tog.on::after{left:25px}
+
+/* ── DURATION ROW ── */
+.dur-row{display:flex;gap:9px;margin-top:12px}
+.dur-row input{flex:1}
+.dur-row select{width:120px;flex-shrink:0}
+
+/* ── ACTIONS ── */
+.action-wrap{margin:4px 0 14px}
+.btn-go{
+  width:100%;padding:17px;border:none;border-radius:var(--r-sm);
+  font-size:16px;font-weight:700;letter-spacing:.3px;
+  cursor:pointer;transition:all .18s;
+  background:linear-gradient(135deg,#a8681f 0%,#c98a3c 100%);
+  color:#fff;
+  box-shadow:0 4px 18px rgba(168,104,31,.28);
+}
+.btn-go:active{transform:scale(.97);box-shadow:none}
+.btn-go:disabled{opacity:.38;cursor:default;transform:none;box-shadow:none}
+.btn-stop{
+  width:100%;padding:17px;border-radius:var(--r-sm);
+  font-size:16px;font-weight:700;cursor:pointer;
+  background:transparent;
+  color:var(--red);
+  border:2px solid rgba(183,54,75,.35);
+  transition:all .18s;
+}
+.btn-stop:active{background:rgba(183,54,75,.08)}
+
+/* ── TERMINAL ── */
+.term-wrap{
+  background:#1c1a15;
+  border:1px solid #2b2822;
+  border-radius:var(--r-sm);
+  overflow:hidden;
+}
+.term-bar{
+  background:#252119;padding:8px 12px;
+  display:flex;align-items:center;gap:7px;
+  border-bottom:1px solid #332e24;
+}
+.term-dots span{
+  display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;
+}
+.term-dots span:nth-child(1){background:#ff5f57}
+.term-dots span:nth-child(2){background:#febc2e}
+.term-dots span:nth-child(3){background:#28c840}
+.term-title{font-size:11px;color:#8a8272;font-family:'IBM Plex Mono',monospace;margin-left:2px}
+#log{
+  height:220px;overflow-y:auto;
+  padding:10px 12px;
+  font-family:'SF Mono','IBM Plex Mono','Fira Code','Courier New',monospace;
+  font-size:12px;line-height:1.65;
+}
+.ll{word-break:break-all;margin-bottom:1px}
+.ll-info{color:#e0b877}
+.ll-success{color:#4fc3a1}
+.ll-error{color:#e0617a}
+.ll-ffmpeg{color:#8a8272}
+.ll-progress{color:#c9b98f}
+
+/* ── STATS ROW ── */
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  margin-top:11px;
+}
+.stat-card{
+  background:var(--s3);border:1px solid var(--border);
+  border-radius:var(--r-xs);padding:9px 10px;
+  text-align:center;
+}
+.stat-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block}
+.stat-val{font-size:14px;font-weight:700;color:var(--text);display:block;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── PROGRESS ── */
+.prog-outer{
+  height:3px;background:var(--s3);
+  margin:0;border-radius:0;overflow:hidden;
+  display:none;
+}
+.prog-inner{
+  height:100%;
+  background:linear-gradient(90deg,#a8681f,#c98a3c);
+  width:0%;transition:width 1s linear;
+}
+
+/* ── NOTICE ── */
+.notice{
+  background:rgba(168,104,31,.07);
+  border:1px solid rgba(168,104,31,.18);
+  border-radius:var(--r-sm);
+  padding:12px 15px;
+  font-size:12px;color:var(--muted2);
+  line-height:1.6;
+  margin-bottom:16px;
+}
+.notice b{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M16.9 16.9l2.1 2.1M4.9 19.1l2.1-2.1M16.9 7.1l2.1-2.1"/></svg>
+  </div>
+  <div class="header-text">
+    <h1>ReStream</h1>
+    <p>YouTube → Live Rebroadcast</p>
+  </div>
+  <div class="live-badge" id="badge">Idle</div>
+</header>
+
+<main>
+
+  <div class="notice">
+    <b>No download needed.</b> Video stream goes directly from YouTube to your platform via RTMP. Mobile network pe bhi kaam karta hai.
+  </div>
+
+  <!-- STEP 1: SOURCE -->
+  <div class="sect">
+    <div class="sect-head">
+      <div class="num">1</div>
+      <h2>Source Video</h2>
+    </div>
+    <div class="sect-body">
+      <div class="field">
+        <label>YouTube URL</label>
+        <div class="input-wrap">
+          <span class="pfx">🔗</span>
+          <input class="has-pfx" type="url" id="ytUrl"
+            placeholder="https://youtube.com/watch?v=..."
+            autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: PLATFORM -->
+  <div class="sect">
+    <div class="sect-head">
+      <div class="num">2</div>
+      <h2>Destination Platform</h2>
+    </div>
+    <div class="sect-body">
+      <div class="field">
+        <label>Platform</label>
+        <div class="plat-grid">
+          <div class="plat-card active" data-p="facebook" onclick="setPlatform(this)">
+            <span class="pico">🔵</span>
+            <span class="pname">Facebook</span>
+          </div>
+          <div class="plat-card" data-p="youtube" onclick="setPlatform(this)">
+            <span class="pico">🔴</span>
+            <span class="pname">YouTube</span>
+          </div>
+          <div class="plat-card" data-p="twitch" onclick="setPlatform(this)">
+            <span class="pico">🟣</span>
+            <span class="pname">Twitch</span>
+          </div>
+          <div class="plat-card" data-p="instagram" onclick="setPlatform(this)">
+            <span class="pico">🟡</span>
+            <span class="pname">Instagram</span>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Stream Key</label>
+        <div class="input-wrap">
+          <input type="password" id="streamKey"
+            placeholder="Paste your stream key here..."
+            autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+          <button class="eye-btn" onclick="toggleKey()" type="button">👁</button>
+        </div>
+      </div>
+      <div class="field" id="rtmpField" style="display:none">
+        <label>Custom RTMP URL</label>
+        <input type="url" id="customRtmp"
+          placeholder="rtmp://your-server.com/live/"
+          autocomplete="off" autocapitalize="none">
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: QUALITY -->
+  <div class="sect">
+    <div class="sect-head">
+      <div class="num">3</div>
+      <h2>Video Quality</h2>
+    </div>
+    <div class="sect-body">
+      <div class="res-grid">
+        <div class="res-card" data-r="1080p" onclick="setRes(this)">
+          <span class="rlabel">1080p</span>
+          <span class="rsub">Full HD · 4 Mbps</span>
+        </div>
+        <div class="res-card active" data-r="720p" onclick="setRes(this)">
+          <span class="rlabel">720p</span>
+          <span class="rsub">HD · 2.5 Mbps ✓</span>
+        </div>
+        <div class="res-card" data-r="480p" onclick="setRes(this)">
+          <span class="rlabel">480p</span>
+          <span class="rsub">SD · 1.2 Mbps</span>
+        </div>
+        <div class="res-card" data-r="360p" onclick="setRes(this)">
+          <span class="rlabel">360p</span>
+          <span class="rsub">Low · 800 Kbps</span>
+        </div>
+      </div>
+      <div class="field" style="margin-top:14px;margin-bottom:0">
+        <label>Frame Rate (FPS)</label>
+        <div class="fps-grid">
+          <div class="fps-card" data-f="24" onclick="setFps(this)">
+            <span class="fval">24</span>
+            <span class="fsub">Cinema</span>
+          </div>
+          <div class="fps-card" data-f="25" onclick="setFps(this)">
+            <span class="fval">25</span>
+            <span class="fsub">PAL</span>
+          </div>
+          <div class="fps-card active" data-f="30" onclick="setFps(this)">
+            <span class="fval">30</span>
+            <span class="fsub">Standard</span>
+          </div>
+          <div class="fps-card" data-f="60" onclick="setFps(this)">
+            <span class="fval">60</span>
+            <span class="fsub">Smooth</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: DURATION -->
+  <div class="sect">
+    <div class="sect-head">
+      <div class="num">4</div>
+      <h2>Stream Duration</h2>
+    </div>
+    <div class="sect-body">
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="tl">24/7 Loop Mode</div>
+          <div class="ts">Video continuously repeat hoti rahegi</div>
+        </div>
+        <div class="tog" id="loopTog" onclick="toggleLoop()"></div>
+      </div>
+      <div id="durBlock">
+        <label style="font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.3px;text-transform:uppercase">Duration</label>
+        <div class="dur-row">
+          <input type="number" id="durVal" value="60" min="1" max="1440" placeholder="60">
+          <select id="durUnit">
+            <option value="1">Minutes</option>
+            <option value="60">Hours</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION -->
+  <div class="action-wrap">
+    <button class="btn-go" id="btnStart" onclick="startStream()">▶ Start Live Stream</button>
+    <button class="btn-stop" id="btnStop" onclick="stopStream()" style="display:none;margin-top:10px">⏹ Stop Stream</button>
+  </div>
+
+  <!-- TERMINAL -->
+  <div class="sect" style="margin-bottom:0">
+    <div class="sect-head">
+      <div class="num">5</div>
+      <h2>Live Console</h2>
+    </div>
+    <div class="prog-outer" id="prog"><div class="prog-inner" id="progBar"></div></div>
+    <div class="term-wrap">
+      <div class="term-bar">
+        <div class="term-dots"><span></span><span></span><span></span></div>
+        <span class="term-title">restream — ffmpeg output</span>
+      </div>
+      <div id="log"><span class="ll ll-info">System ready. Configure above and press Start.</span></div>
+    </div>
+    <div class="stats">
+      <div class="stat-card"><span class="stat-label">Platform</span><span class="stat-val" id="sPlatform">—</span></div>
+      <div class="stat-card"><span class="stat-label">Quality</span><span class="stat-val" id="sQuality">720p</span></div>
+      <div class="stat-card"><span class="stat-label">FPS</span><span class="stat-val" id="sFps">30</span></div>
+      <div class="stat-card"><span class="stat-label">Mode</span><span class="stat-val" id="sMode">—</span></div>
+      <div class="stat-card"><span class="stat-label">Uptime</span><span class="stat-val" id="sUptime">—</span></div>
+      <div class="stat-card"><span class="stat-label">Remaining</span><span class="stat-val" id="sRemain">—</span></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const STREAM_KEY='restream_stream_id';
+const CLIENT_KEY='restream_client_id';
+let clientId=localStorage.getItem(CLIENT_KEY);
+if(!clientId){
+  clientId='c'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  localStorage.setItem(CLIENT_KEY,clientId);
+}
+
+let socket, streamId=localStorage.getItem(STREAM_KEY)||null, loopMode=false, selPlat='facebook', selRes='720p', selFps=30;
+let timer=null, secs=0, isLive=false, isStarting=false;
+let activeLoop=false, activeDurMin=60;
+
+function clearStoredStream(){
+  localStorage.removeItem(STREAM_KEY);
+  streamId=null;
+}
+
+function initSocket(){
+  socket = io();
+  socket.on('connect',()=>{
+    addLog('info','Connected to server');
+    // Ask server if a stream is already running (survives page refresh)
+    socket.emit('get_state',{ clientId, streamId: localStorage.getItem(STREAM_KEY) });
+  });
+  socket.on('disconnect',()=>{ addLog('error','Disconnected'); setIdle(); });
+  socket.on('log',({type,msg})=>addLog(type,msg));
+  socket.on('stream_started',()=>{
+    // Fetch full state so mode/quality/timing are restored even on a fresh page
+    socket.emit('get_state',{ clientId, streamId: localStorage.getItem(STREAM_KEY) });
+  });
+  socket.on('stream_state',(st)=>applyServerState(st));
+  socket.on('stream_stats',({streamId:sid,fps})=>{
+    if(sid && streamId && sid!==streamId) return;
+    if(!isLive) return;
+    const v=Number(fps);
+    if(isFinite(v) && v>0) document.getElementById('sFps').textContent=v.toFixed(1);
+  });
+  socket.on('stream_error',({msg,streamId:sid})=>{
+    addLog('error','Error: '+msg);
+    if(!sid || !streamId || sid===streamId){ clearStoredStream(); setIdle(); }
+  });
+  socket.on('stream_ended',({streamId:sid}={})=>{
+    if(sid && streamId && sid!==streamId) return;
+    clearStoredStream();
+    setIdle();
+  });
+}
+
+function addLog(type,msg){
+  const box=document.getElementById('log');
+  const d=document.createElement('div');
+  d.className='ll ll-'+type;
+  const t=new Date().toLocaleTimeString('en-IN',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  d.textContent=t+' '+msg;
+  box.appendChild(d);
+  if(box.children.length>300) box.removeChild(box.firstChild);
+  box.scrollTop=box.scrollHeight;
+  // Fallback: only go LIVE after the real "Streaming started" confirmation
+  if(!isLive && type==='success' && /streaming started/i.test(msg)) setLive();
+}
+
+function setPlatform(el){
+  document.querySelectorAll('.plat-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  selPlat=el.dataset.p;
+  const isCustom=selPlat==='custom';
+  document.getElementById('rtmpField').style.display=isCustom?'block':'none';
+  document.getElementById('sPlatform').textContent=el.querySelector('.pname').textContent;
+}
+
+function setRes(el){
+  document.querySelectorAll('.res-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  selRes=el.dataset.r;
+  document.getElementById('sQuality').textContent=selRes;
+}
+
+function setFps(el){
+  document.querySelectorAll('.fps-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  selFps=parseInt(el.dataset.f,10)||30;
+  document.getElementById('sFps').textContent=selFps;
+}
+
+function fmtClock(totalSec){
+  const s=Math.max(0,Math.floor(totalSec||0));
+  return String(Math.floor(s/3600)).padStart(2,'0')+':'+
+         String(Math.floor(s%3600/60)).padStart(2,'0')+':'+
+         String(s%60).padStart(2,'0');
+}
+
+function setLoop(on){
+  loopMode=!!on;
+  document.getElementById('loopTog').classList.toggle('on',loopMode);
+  document.getElementById('durBlock').style.display=loopMode?'none':'block';
+}
+
+function toggleLoop(){ setLoop(!loopMode); }
+
+function toggleKey(){
+  const inp=document.getElementById('streamKey');
+  inp.type=inp.type==='password'?'text':'password';
+}
+
+function getDurMin(){
+  return (parseInt(document.getElementById('durVal').value)||60) *
+         (parseInt(document.getElementById('durUnit').value)||1);
+}
+
+function startStream(){
+  const url=document.getElementById('ytUrl').value.trim();
+  const key=document.getElementById('streamKey').value.trim();
+  if(!url){alert('YouTube URL daalo');return;}
+  if(!key&&selPlat!=='custom'){alert('Stream key daalo');return;}
+  if(!url.includes('youtube.com')&&!url.includes('youtu.be')){alert('Valid YouTube URL chahiye');return;}
+
+  if(!socket) initSocket();
+  streamId='s'+Date.now();
+  localStorage.setItem(STREAM_KEY, streamId);
+  document.getElementById('log').innerHTML='';
+  addLog('info','Initiating stream...');
+
+  setStarting();
+
+  socket.emit('start_stream',{
+    youtubeUrl:url,
+    rtmpKey:key,
+    platform:selPlat,
+    resolution:selRes,
+    fps:selFps,
+    duration:loopMode?0:getDurMin(),
+    loop:loopMode,
+    streamId,
+    clientId,
+    customRtmpUrl:document.getElementById('customRtmp').value.trim()
+  });
+}
+
+function stopStream(){
+  if(socket&&streamId) socket.emit('stop_stream',{streamId});
+  setIdle();
+}
+
+// Dark "Starting..." state — no LIVE badge, no timer yet
+function setStarting(){
+  isLive=false;isStarting=true;
+  activeLoop=loopMode;
+  activeDurMin=getDurMin();
+  document.getElementById('btnStart').style.display='none';
+  document.getElementById('btnStop').style.display='block';
+  const badge=document.getElementById('badge');
+  badge.className='live-badge starting';badge.textContent='Starting…';
+  document.getElementById('prog').style.display='none';
+  document.getElementById('progBar').style.width='0';
+  document.getElementById('sUptime').textContent='—';
+  document.getElementById('sFps').textContent=selFps;
+  document.getElementById('sMode').textContent=activeLoop?'24/7 Loop':activeDurMin+' min';
+  document.getElementById('sRemain').textContent=activeLoop?'∞':fmtClock(activeDurMin*60);
+  clearInterval(timer);timer=null;secs=0;
+}
+
+function renderUptime(){
+  document.getElementById('sUptime').textContent=fmtClock(secs);
+  if(!activeLoop){
+    const total=activeDurMin*60;
+    document.getElementById('sRemain').textContent=fmtClock(Math.max(0,total-secs));
+    const pct=Math.min(100,secs/total*100);
+    document.getElementById('progBar').style.width=pct+'%';
+  }else{
+    document.getElementById('sRemain').textContent='∞';
+  }
+}
+
+// Called only when the server confirms real streaming ("Streaming started")
+function setLive(elapsedSec){
+  if(isLive) return;
+  isLive=true;isStarting=false;
+  document.getElementById('btnStart').style.display='none';
+  document.getElementById('btnStop').style.display='block';
+  const badge=document.getElementById('badge');
+  badge.className='live-badge on';badge.textContent='● LIVE';
+  document.getElementById('sMode').textContent=activeLoop?'24/7 Loop':activeDurMin+' min';
+  document.getElementById('prog').style.display=activeLoop?'none':'block';
+  clearInterval(timer);
+  secs=Math.max(0,Math.floor(elapsedSec||0));
+  renderUptime();
+  timer=setInterval(()=>{ secs++; renderUptime(); },1000);
+}
+
+function setIdle(){
+  isLive=false;isStarting=false;
+  document.getElementById('btnStart').style.display='block';
+  document.getElementById('btnStop').style.display='none';
+  const badge=document.getElementById('badge');
+  badge.className='live-badge';badge.textContent='Idle';
+  clearInterval(timer);timer=null;
+  document.getElementById('prog').style.display='none';
+  document.getElementById('progBar').style.width='0';
+  document.getElementById('sUptime').textContent='—';
+  document.getElementById('sMode').textContent='—';
+  document.getElementById('sRemain').textContent='—';
+  document.getElementById('sFps').textContent=selFps;
+}
+
+// Rebuild the UI from server state after a page refresh / reconnect
+function applyServerState(st){
+  if(!st || !st.active){
+    if(isLive || isStarting) setIdle();
+    clearStoredStream();
+    return;
+  }
+
+  // Already tracking this exact live stream locally — nothing to restore
+  if(isLive && streamId===st.streamId) return;
+
+  streamId=st.streamId;
+  localStorage.setItem(STREAM_KEY,streamId);
+  activeLoop=!!st.loop;
+  activeDurMin=st.loop?0:(st.duration||60);
+
+  // Restore the selected options in the form
+  const p=document.querySelector('.plat-card[data-p="'+st.platform+'"]'); if(p) setPlatform(p);
+  const r=document.querySelector('.res-card[data-r="'+st.resolution+'"]'); if(r) setRes(r);
+  const f=document.querySelector('.fps-card[data-f="'+st.fps+'"]'); if(f) setFps(f);
+  setLoop(!!st.loop);
+  if(!st.loop){
+    document.getElementById('durVal').value=activeDurMin;
+    document.getElementById('durUnit').value='1';
+  }
+
+  if(st.started){
+    const wasStarting=isStarting||isLive;
+    const elapsed=Math.max(0,Math.floor((Date.now()-(st.startedAt||Date.now()))/1000));
+    setLive(elapsed);
+    if(st.stats && st.stats.fps) document.getElementById('sFps').textContent=Number(st.stats.fps).toFixed(1);
+    if(!wasStarting) addLog('success','Resumed running stream — '+fmtClock(elapsed)+' elapsed');
+  }else{
+    setStarting();
+    addLog('info','Stream is still starting — waiting for confirmation...');
+  }
+}
+
+// init
+document.getElementById('sPlatform').textContent='Facebook';
+initSocket();
+</script>
+</body>
+</html>
